@@ -373,21 +373,21 @@ fun Nacteni() {
         val lastRideObject = rideDao.observeLastRide().firstOrNull() // Získá aktuální hodnotu z Flow
         if (lastRideObject != null) {
             viewModel.ActualID = lastRideObject.id
-            //viewModel.car = lastRideObject.car
-            //viewModel.date = lastRideObject.date
-            //viewModel.startTime = lastRideObject.startTime
-            //viewModel.startKm = lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
-            //viewModel.startFuelKm = lastRideObject.startFuelKm ?: 0
-            //viewModel.isFinished = lastRideObject.isFinished
-            //viewModel.endTime = lastRideObject.endTime ?: 0
-            //viewModel.endKm = lastRideObject.endKm ?: 0
-            //viewModel.endFuelKm = lastRideObject.endFuelKm ?: 0
-            //viewModel.isPersonal = lastRideObject.isPersonal
-            //viewModel.isFamily = lastRideObject.isFamily
-            //viewModel.isBoys = lastRideObject.isBoys
-            //viewModel.isReimburses = lastRideObject.isReimburses
-            //viewModel.destination = lastRideObject.destination ?: ""
-            //viewModel.notes = lastRideObject.notes ?: ""
+            viewModel.car = lastRideObject.car
+            viewModel.date = lastRideObject.date
+            viewModel.startTime = lastRideObject.startTime
+            viewModel.startKm = lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
+            viewModel.startFuelKm = lastRideObject.startFuelKm ?: 0
+            viewModel.isFinished = lastRideObject.isFinished
+            viewModel.endTime = lastRideObject.endTime ?: 0
+            viewModel.endKm = lastRideObject.endKm ?: 0
+            viewModel.endFuelKm = lastRideObject.endFuelKm ?: 0
+            viewModel.isPersonal = lastRideObject.isPersonal
+            viewModel.isFamily = lastRideObject.isFamily
+            viewModel.isBoys = lastRideObject.isBoys
+            viewModel.isReimburses = lastRideObject.isReimburses
+            viewModel.destination = lastRideObject.destination ?: ""
+            viewModel.notes = lastRideObject.notes ?: ""
             viewModel.lastActualID = lastRideObject.id
         } else {
             viewModel.ActualID = 0 // Nebo nějaká jiná indikace
@@ -448,7 +448,7 @@ fun Ulozeni() {
     val rideDao = db.rideDao()
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
-        viewModel.isFinished == true
+        viewModel.isFinished = true
         Vypocty()
     }
 
@@ -485,7 +485,7 @@ fun Ulozeni() {
         if (viewModel.startKm != 0 || viewModel.startFuelKm != 0){
             LaunchedEffect(Unit) {
                 val newRide = Ride(
-                    id = viewModel.ActualID,
+                    //id = viewModel.ActualID,
                     car = viewModel.car,
                     date = viewModel.date,
                     startTime = viewModel.startTime,
@@ -507,7 +507,8 @@ fun Ulozeni() {
                     destination = viewModel.destination,
                     notes = viewModel.notes
                 )
-                rideDao.insertRide(newRide)
+                val newId = rideDao.insertRide(newRide).toInt()
+                viewModel.ActualID = newId
             }
         viewModel.new_click = 0
         viewModel.wasNewRide = 0
