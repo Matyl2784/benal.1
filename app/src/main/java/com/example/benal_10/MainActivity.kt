@@ -340,7 +340,7 @@ fun MyTopAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { viewModel.new_click += 1 }) {
+            IconButton(onClick = { viewModel.new_click = 1 }) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "Localized description"
@@ -349,9 +349,9 @@ fun MyTopAppBar(
         },
         scrollBehavior = scrollBehavior,
     )
-    if (viewModel.new_click == 1 && viewModel.wasNewRide == 0) {
+    if (viewModel.new_click == 1) {
         Nova_jizda()
-        viewModel.new_click += 1
+        viewModel.new_click = 2
     }
 }
 
@@ -373,21 +373,21 @@ fun Nacteni() {
         val lastRideObject = rideDao.observeLastRide().firstOrNull() // Získá aktuální hodnotu z Flow
         if (lastRideObject != null) {
             viewModel.ActualID = lastRideObject.id
-            viewModel.car = lastRideObject.car
-            viewModel.date = lastRideObject.date
-            viewModel.startTime = lastRideObject.startTime
-            viewModel.startKm = lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
-            viewModel.startFuelKm = lastRideObject.startFuelKm ?: 0
-            viewModel.isFinished = lastRideObject.isFinished
-            viewModel.endTime = lastRideObject.endTime ?: 0
-            viewModel.endKm = lastRideObject.endKm ?: 0
-            viewModel.endFuelKm = lastRideObject.endFuelKm ?: 0
-            viewModel.isPersonal = lastRideObject.isPersonal
-            viewModel.isFamily = lastRideObject.isFamily
-            viewModel.isBoys = lastRideObject.isBoys
-            viewModel.isReimburses = lastRideObject.isReimburses
-            viewModel.destination = lastRideObject.destination ?: ""
-            viewModel.notes = lastRideObject.notes ?: ""
+            //viewModel.car = lastRideObject.car
+            //viewModel.date = lastRideObject.date
+            //viewModel.startTime = lastRideObject.startTime
+            //viewModel.startKm = lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
+            //viewModel.startFuelKm = lastRideObject.startFuelKm ?: 0
+            //viewModel.isFinished = lastRideObject.isFinished
+            //viewModel.endTime = lastRideObject.endTime ?: 0
+            //viewModel.endKm = lastRideObject.endKm ?: 0
+            //viewModel.endFuelKm = lastRideObject.endFuelKm ?: 0
+            //viewModel.isPersonal = lastRideObject.isPersonal
+            //viewModel.isFamily = lastRideObject.isFamily
+            //viewModel.isBoys = lastRideObject.isBoys
+            //viewModel.isReimburses = lastRideObject.isReimburses
+            //viewModel.destination = lastRideObject.destination ?: ""
+            //viewModel.notes = lastRideObject.notes ?: ""
             viewModel.lastActualID = lastRideObject.id
         } else {
             viewModel.ActualID = 0 // Nebo nějaká jiná indikace
@@ -398,7 +398,8 @@ fun Nacteni() {
         viewModel.new_click == 2
     }
     if (viewModel.isFinished == true) {
-        viewModel.new_click += 1
+        Nova_jizda()
+        viewModel.new_click == 2
     }
     Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
     Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
@@ -436,6 +437,7 @@ fun Nova_jizda(){
     viewModel.ActualID = viewModel.ActualID + 1
 
     viewModel.wasNewRide = 1
+    viewModel.new_click = 2
 }
 
 @Composable
@@ -993,8 +995,7 @@ fun Greeting(name: String) {
 @Composable
 fun Info(text: String) {
     val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val rideDao = db.rideDao()
+    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
 
