@@ -439,7 +439,7 @@ fun Nova_jizda(){
     viewModel.wasNewRide = 1
     viewModel.new_click = 2
 }
-
+//fungue git?
 @Composable
 fun Ulozeni() {
     val viewModel: CounterViewModel = viewModel()
