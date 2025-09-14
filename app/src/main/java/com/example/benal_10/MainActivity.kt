@@ -1075,7 +1075,7 @@ fun Info(text: String) {
                         "Fuel: ${ride.fuel ?: "-"} l, " +
                         "Price: ${ride.price ?: "-"} Kč, " +
                         "Average speed: ${ride.averageSpeed ?: "-"} km/h, " +
-                        "Ride time: ${ride.rideTime ?: "-"} min, " +
+                        "Ride time: ${ride.rideTime ?: "-"} s, " +
                         "Car: ${ride.car}, " +
                         "Notes: ${ride.notes ?: "-"}, " +
                         "ID: ${ride.id}, " +
