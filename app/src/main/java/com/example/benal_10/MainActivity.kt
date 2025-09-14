@@ -246,113 +246,6 @@ data class RideUiState(
     val message: String? = null         // jednoduché hlášky pro UI
 )
 
-//class RideModel(private val dao: RideDao) : ViewModel() {
-//
-//    // interní flow stav
-//    private val _uiState = MutableStateFlow(RideUiState())
-//    val uiState: StateFlow<RideUiState> = _uiState.asStateFlow()
-//
-//    init {
-//        // Posloucháme změny z DB a skládáme je do jednoho stavu
-//        viewModelScope.launch {
-//            combine(
-//                dao.observeUnfinishedRide(),
-//                dao.observeAllRides()
-//            ) { unfinished, allRides ->
-//                RideUiState(current = unfinished, all = allRides, message = null)
-//            }.collect { _uiState.value = it }
-//        }
-//    }
-//
-//    /** Zahájit novou jízdu (pokud už nějaká běží, můžeš vrátit hlášku) */
-//    fun startRide(
-//        car: String,
-//        startKm: Int?,
-//        startFuelKm: Int?,
-//        destination: String?,
-//        notes: String?
-//    ) = viewModelScope.launch {
-//        val existing = dao.getUnfinishedRide()
-//        if (existing != null) {
-//            _uiState.update { it.copy(message = "Nejprve dokonči rozjetou jízdu (id=${existing.id}).") }
-//            return@launch
-//        }
-//        val now = System.currentTimeMillis()
-//        val dateStr = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(now))
-//        val newRide = Ride(
-//            car = car.ifBlank { "Neznámé auto" },
-//            date = dateStr,
-//            startTime = now,
-//            startKm = startKm,
-//            startFuelKm = startFuelKm,
-//            destination = destination,
-//            notes = notes,
-//            isFinished = false
-//        )
-//        dao.insertRide(newRide)
-//        _uiState.update { it.copy(message = "Jízda zahájena.") }
-//    }
-//
-//    /** Průběžné ukládání polí nedokončené jízdy (destination, notes, atd.) */
-//    fun updateCurrentRide(
-//        destination: String? = null,
-//        notes: String? = null,
-//        startKm: Int? = null,
-//        startFuelKm: Int? = null
-//    ) = viewModelScope.launch {
-//        val current = dao.getUnfinishedRide() ?: return@launch
-//        val updated = current.copy(
-//            destination = destination ?: current.destination,
-//            notes = notes ?: current.notes,
-//            startKm = startKm ?: current.startKm,
-//            startFuelKm = startFuelKm ?: current.startFuelKm
-//        )
-//        dao.updateRide(updated)
-//        _uiState.update { it.copy(message = "Uloženo.") }
-//    }
-//
-//    /** Dokončení jízdy – doplní endKm/endTime a přepne isFinished=true */
-//    fun finishRide(
-//        endKm: Int?,
-//        endFuelKm: Int?
-//    ) = viewModelScope.launch {
-//        val current = dao.getUnfinishedRide()
-//        if (current == null) {
-//            _uiState.update { it.copy(message = "Není žádná rozjetá jízda.") }
-//            return@launch
-//        }
-//        val now = System.currentTimeMillis()
-//        val distance = if (endKm != null && current.startKm != null) (endKm - current.startKm) else null
-//        val updated = current.copy(
-//            endTime = now,
-//            endKm = endKm,
-//            endFuelKm = endFuelKm,
-//            isFinished = true,
-//            distance = distance
-//        )
-//        dao.updateRide(updated)
-//        _uiState.update { it.copy(message = "Jízda dokončena.") }
-//    }
-//}
-//
-//@Suppress("UNCHECKED_CAST")
-//class RideViewModelFactory(private val dao: RideDao) : ViewModelProvider.Factory {
-//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-//        require(modelClass.isAssignableFrom(RideViewModel::class.java))
-//        return RideViewModel(dao) as T
-//    }
-//}
-//
-//
-////date = ride.date
-////destination = ride.destination ?: ""
-////notes = ride.notes ?: ""
-////startTime = ride.startTime
-////startKm = ride.startKm ?: 0
-////startFuelKm = ride.startFuelKm ?: 0
-////isPersonal = ride.isPersonal
-////isFamily = ride.isFamily
-////isBoys = ride.isBoys
 
 
 class MainActivity : ComponentActivity() {
@@ -361,11 +254,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-
-        val dao = AppDatabase.getDatabase(this).rideDao()
-
-
-
         setContent {
             Benal_10Theme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -461,7 +349,7 @@ fun MyTopAppBar(
         },
         scrollBehavior = scrollBehavior,
     )
-    if (viewModel.new_click == 1) {
+    if (viewModel.new_click == 1 && viewModel.wasNewRide == 0) {
         Nova_jizda()
         viewModel.new_click += 1
     }
@@ -500,17 +388,22 @@ fun Nacteni() {
             viewModel.isReimburses = lastRideObject.isReimburses
             viewModel.destination = lastRideObject.destination ?: ""
             viewModel.notes = lastRideObject.notes ?: ""
+            viewModel.lastActualID = lastRideObject.id
         } else {
             viewModel.ActualID = 0 // Nebo nějaká jiná indikace
         }
     }
     if (viewModel.ActualID == 0) {
         Nova_jizda()
+        viewModel.new_click == 2
     }
     if (viewModel.isFinished == true) {
         viewModel.new_click += 1
     }
     Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
+    Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
+    Text("Aktuální LastId z ViewModelu: ${viewModel.lastActualID}")
+    Text("Aktualni isFinished z viewmodelu: ${viewModel.isFinished}")
 }
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
@@ -624,7 +517,7 @@ fun Ulozeni() {
 
 @Composable
 fun Vypocty(){
-
+    println("fsd")
 }
 
 
@@ -798,6 +691,7 @@ fun Prvni() {
                                 Button(onClick = {
                                     selectedTime = "%02d:%02d".format(state.hour, state.minute)
                                     showDialog = false
+                                    viewModel.startTime = selectedTime.toLong()
                                 }) {
                                     Text("Potvrdit")
                                 }
@@ -808,6 +702,10 @@ fun Prvni() {
             }
         }
     }
+    }
+    if (viewModel.ulozit == 1) {
+        Ulozeni()
+        viewModel.ulozit = 0
     }
 }
 
@@ -965,6 +863,7 @@ fun Druhy() {
                                     Button(onClick = {
                                         selectedTime = "%02d:%02d".format(state.hour, state.minute)
                                         showDialog = false
+                                        viewModel.endTime = selectedTime.toLong()
                                     }) {
                                         Text("Potvrdit")
                                     }
@@ -974,12 +873,19 @@ fun Druhy() {
                     }
                 }
             }
-        }}
+        }
+    }
+    if (viewModel.ulozit == 1) {
+        Ulozeni()
+        viewModel.ulozit = 0
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Treti() {
+    val viewModel: CounterViewModel = viewModel()
+
     Box(
         modifier = Modifier
             .shadow(10.dp, RoundedCornerShape(36.dp))
@@ -1025,8 +931,6 @@ fun Treti() {
             }
 
             // ==== PRAVÁ strana - destination + notes ====
-            var destination by remember { mutableStateOf("") }
-            var notes by remember { mutableStateOf("") }
 
             Column(
                 modifier = Modifier.width(175.dp),
@@ -1034,8 +938,8 @@ fun Treti() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
-                    value = destination,
-                    onValueChange = { destination = it },
+                    value = viewModel.destination,
+                    onValueChange = { viewModel.destination = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(30.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -1051,8 +955,8 @@ fun Treti() {
                 )
 
                 OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
+                    value = viewModel.notes,
+                    onValueChange = { viewModel.notes = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(30.dp),
                     colors = OutlinedTextFieldDefaults.colors(
