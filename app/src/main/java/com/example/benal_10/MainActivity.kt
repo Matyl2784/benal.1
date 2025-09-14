@@ -147,7 +147,7 @@ data class Ride(
     val fuel: Int? = null,
     val price: Int? = null,
     val averageSpeed: Int? = null,
-    val rideTime: Long? = null,
+    val rideTime: Int? = null, //v sekundach
     val isPersonal: Boolean = false,
     val isFamily: Boolean = false,
     val isBoys: Boolean = false,
@@ -218,7 +218,7 @@ class CounterViewModel: ViewModel() {
     var fuel by mutableIntStateOf(0)
     var price by mutableIntStateOf(0)
     var averageSpeed by mutableIntStateOf(0)
-    var rideTime by mutableLongStateOf(0L)
+    var rideTime by mutableIntStateOf(1)
     var isPersonal by mutableStateOf(false)
     var isFamily by mutableStateOf(false)
     var isBoys by mutableStateOf(false)
@@ -449,8 +449,8 @@ fun Ulozeni() {
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
         viewModel.isFinished = true
-        Vypocty()
         viewModel.endTime = System.currentTimeMillis()
+        Vypocty()
     }
 
     if (viewModel.ActualID == viewModel.lastActualID) { //update
@@ -528,6 +528,11 @@ fun Ulozeni() {
 
 @Composable
 fun Vypocty(){
+    val viewModel: CounterViewModel = viewModel()
+
+    viewModel.distance = viewModel.endKm - viewModel.startKm
+    viewModel.rideTime = ((viewModel.endTime - viewModel.startTime) / 1000).toInt()
+    viewModel.averageSpeed = (viewModel.distance.toFloat() / (viewModel.rideTime.toFloat() / 60 / 60)).toInt()
 
 
 }
@@ -1076,7 +1081,8 @@ fun Info(text: String) {
                         "ID: ${ride.id}, " +
                         "Destination: ${ride.destination ?: "-"}, " +
                         "Start fuel km: ${ride.startFuelKm ?: "-"}, " +
-                        "End fuel km: ${ride.endFuelKm ?: "-"}\n"
+                        "End fuel km: ${ride.endFuelKm ?: "-"}, " +
+                        "Is finished: ${ride.isFinished}\n"
             )
         }
     }
