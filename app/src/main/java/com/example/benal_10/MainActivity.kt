@@ -242,14 +242,6 @@ class CounterViewModel: ViewModel() {
 }
 
 
-data class RideUiState(
-    val current: Ride? = null,          // nedokončená jízda (může být null)
-    val all: List<Ride> = emptyList(),  // všechny jízdy (pro výpis)
-    val message: String? = null         // jednoduché hlášky pro UI
-)
-
-
-
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -458,6 +450,7 @@ fun Ulozeni() {
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
         viewModel.isFinished = true
         Vypocty()
+        viewModel.endTime = System.currentTimeMillis()
     }
 
     if (viewModel.ActualID == viewModel.lastActualID) { //update
@@ -535,7 +528,8 @@ fun Ulozeni() {
 
 @Composable
 fun Vypocty(){
-    println("fsd")
+
+
 }
 
 
@@ -732,8 +726,6 @@ fun Prvni() {
 fun Druhy() {
     val viewModel: CounterViewModel = viewModel()
 
-    var koncove_km by remember { mutableStateOf("") }
-    var koncove_km_fuel by remember { mutableStateOf("") }
     Box(modifier = Modifier
         .shadow(10.dp, RoundedCornerShape(36.dp))
         .fillMaxWidth(0.88f)
@@ -743,13 +735,26 @@ fun Druhy() {
         Column{
             Row {
                 var checked by rememberSaveable { mutableStateOf(false) }
-                var textfieldvalue by remember{mutableStateOf(TextFieldValue(""))}
+                var localTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+                LaunchedEffect(Unit) { // Spustí se jen jednou na začátku
+                    val initialFormattedValue = formatInGroupsOfThreeFromEnd(viewModel.endKm.toString())
+                    localTextFieldValue = TextFieldValue(text = initialFormattedValue, selection = TextRange(initialFormattedValue.length))
+                }
+
 
                 OutlinedTextField(
-                    value = textfieldvalue,
-                    onValueChange = {newValue -> val rawText = newValue.text.replace(" ","")
+                    value = localTextFieldValue,
+                    onValueChange = { newValue ->
+                        val rawText = newValue.text.replace(" ", "")
                         val formatted = formatInGroupsOfThreeFromEnd(rawText)
-                        textfieldvalue = TextFieldValue(text = formatted, selection = TextRange(formatted.length))},
+                        localTextFieldValue = TextFieldValue(text = formatted, selection = TextRange(formatted.length))
+
+                        // Aktualizace ViewModelu
+                        // Použij očištěný text (bez mezer) pro konverzi na Int
+                        val cleanedText = formatted.replace(" ", "")
+                        viewModel.endKm = cleanedText.toIntOrNull() ?: 0 // Aktualizuj startKm ve ViewModelu
+                        // Použij ?: 0 pro případ, že konverze selže nebo je text prázdný
+                    },
                     modifier = Modifier
                         .width(175.dp)
                         .padding(start = 13.dp, top = 6.dp),
@@ -793,16 +798,23 @@ fun Druhy() {
             }
             Row (modifier = Modifier.padding(top = 7.dp)) {
                 var checked by rememberSaveable { mutableStateOf(false) }
-                var textfieldvalue by remember { mutableStateOf(TextFieldValue("")) }
+                var localTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+                LaunchedEffect(Unit) { // Spustí se jen jednou na začátku
+                    val initialFormattedValue = formatInGroupsOfThreeFromEnd(viewModel.endFuelKm.toString())
+                    localTextFieldValue = TextFieldValue(text = initialFormattedValue, selection = TextRange(initialFormattedValue.length))
+                }
                 OutlinedTextField(
-                    value = textfieldvalue,
+                    value = localTextFieldValue,
                     onValueChange = { newValue ->
                         val rawText = newValue.text.replace(" ", "")
                         val formatted = formatInGroupsOfThreeFromEnd(rawText)
-                        textfieldvalue = TextFieldValue(
-                            text = formatted,
-                            selection = TextRange(formatted.length)
-                        )
+                        localTextFieldValue = TextFieldValue(text = formatted, selection = TextRange(formatted.length))
+
+                        // Aktualizace ViewModelu
+                        // Použij očištěný text (bez mezer) pro konverzi na Int
+                        val cleanedText = formatted.replace(" ", "")
+                        viewModel.endFuelKm = cleanedText.toIntOrNull() ?: 0 // Aktualizuj startKm ve ViewModelu
+                        // Použij ?: 0 pro případ, že konverze selže nebo je text prázdný
                     },
                     modifier = Modifier
                         .width(175.dp)
@@ -1008,29 +1020,83 @@ fun Greeting(name: String) {
 }
 
 
+//@Composable
+//fun Info(text: String) {
+//    val context = LocalContext.current
+//    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
+//
+//    var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
+//
+//    LaunchedEffect(Unit) {
+//        // tohle se spustí jednou při vykreslení
+//        rides = rideDao.getAllRides()
+//    }
+//
+//    Column(modifier = Modifier.padding(16.dp)) {
+//        Text("Seznam jízd:")
+//        rides.forEach { ride ->
+//            Text("Date: ${ride.date}, Start Time: ${SimpleDateFormat("HH:mm", ride.startTime)}, Start km: ${ride.startKm}, End Time ${ride.endTime}, End km: ${ride.endKm ?: "-"}, Distance: ${ride.distance} km, Fuel: ${ride.fuel} l, Price: ${ride.price} Kč, Average speed: ${ride.averageSpeed} km/h, Ride time: ${ride.rideTime} min, Car: ${ride.car}, Notes: ${ride.notes}, ID: ${ride.id}, Destination: ${ride.destination}, Start fuel km: ${ride.startFuelKm}, End fuel km: ${ride.endFuelKm}\n")
+//        }
+//    }
+//    Text(
+//        text = "novy text: $text",
+//        color = Color.Red
+//    )
+//}
+
 @Composable
 fun Info(text: String) {
     val context = LocalContext.current
-    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
+    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() }
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        // tohle se spustí jednou při vykreslení
+        // Načtení všech jízd z DB
         rides = rideDao.getAllRides()
     }
 
-    Column {
+    Column(modifier = Modifier.padding(16.dp)) {
         Text("Seznam jízd:")
+
         rides.forEach { ride ->
-            Text("Auto: ${ride.car}, Start km: ${ride.startKm}, End km: ${ride.endKm ?: "-"}")
+            Text(
+                "Date: ${ride.date}, " +
+                        "Start Time: ${ride.startTime?.let { formatTime(it) } ?: "-"}, " +
+                        "Start km: ${ride.startKm ?: "-"}, " +
+                        "End Time: ${ride.endTime?.let { formatTime(it) } ?: "-"}, " +
+                        "End km: ${ride.endKm ?: "-"}, " +
+                        "Distance: ${ride.distance ?: "-"} km, " +
+                        "Fuel: ${ride.fuel ?: "-"} l, " +
+                        "Price: ${ride.price ?: "-"} Kč, " +
+                        "Average speed: ${ride.averageSpeed ?: "-"} km/h, " +
+                        "Ride time: ${ride.rideTime ?: "-"} min, " +
+                        "Car: ${ride.car}, " +
+                        "Notes: ${ride.notes ?: "-"}, " +
+                        "ID: ${ride.id}, " +
+                        "Destination: ${ride.destination ?: "-"}, " +
+                        "Start fuel km: ${ride.startFuelKm ?: "-"}, " +
+                        "End fuel km: ${ride.endFuelKm ?: "-"}\n"
+            )
         }
     }
+
     Text(
         text = "novy text: $text",
         color = Color.Red
     )
 }
+
+// Pomocná funkce pro formátování času
+fun formatTime(millis: Long): String {
+    val date = Date(millis)
+    val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return formatter.format(date)
+}
+
+
+
+
 
 @Composable
 fun Tlacitko() {
