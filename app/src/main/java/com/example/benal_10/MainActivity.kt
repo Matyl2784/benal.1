@@ -230,11 +230,13 @@ class CounterViewModel: ViewModel() {
 
     var lastEndFuelKm by mutableStateOf("End Fuel KM")
 
-    var lastActualID by mutableIntStateOf(0)
+    var lastActualID by mutableIntStateOf(-1)
 
     var new_click by mutableIntStateOf(0)
 
     var ulozit by mutableIntStateOf(0)
+
+    var wasNewRide by mutableIntStateOf(0)
 }
 
 
@@ -505,9 +507,15 @@ fun Nacteni() {
     if (viewModel.ActualID == 0) {
         Nova_jizda()
     }
+    if (viewModel.isFinished == true) {
+        viewModel.new_click += 1
+    }
     Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
 }
-
+//nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
+//nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
+//nacteni uspesne (nacetlo to nefinished jizdu) - actual = 10, last = 10
+//nacteni uspesne (nacetlo to nefinished jizdu ale dam novou jizdu) - actual = 11, last = 10
 
 @Composable
 fun Nova_jizda(){
@@ -533,16 +541,89 @@ fun Nova_jizda(){
     viewModel.endKm = 0
     viewModel.endFuelKm = 0
     viewModel.ActualID = viewModel.ActualID + 1
+
+    viewModel.wasNewRide = 1
 }
 
 @Composable
 fun Ulozeni() {
     val viewModel: CounterViewModel = viewModel()
-    viewModel.new_click = 0
-    viewModel.ulozit = 0
-    viewModel.ActualID = 0
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val rideDao = db.rideDao()
+
+    if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
+        viewModel.isFinished == true
+        Vypocty()
+    }
+
+    if (viewModel.ActualID == viewModel.lastActualID) { //update
+        LaunchedEffect(viewModel.ActualID) {
+            val updatedRide = Ride(
+                id = viewModel.ActualID,
+                car = viewModel.car,
+                date = viewModel.date,
+                startTime = viewModel.startTime,
+                startKm = viewModel.startKm,
+                startFuelKm = viewModel.startFuelKm,
+                isFinished = viewModel.isFinished,
+                endTime = viewModel.endTime,
+                endKm = viewModel.endKm,
+                endFuelKm = viewModel.endFuelKm,
+                distance = viewModel.distance,
+                fuel = viewModel.fuel,
+                price = viewModel.price,
+                averageSpeed = viewModel.averageSpeed,
+                rideTime = viewModel.rideTime,
+                isPersonal = viewModel.isPersonal,
+                isFamily = viewModel.isFamily,
+                isBoys = viewModel.isBoys,
+                isReimburses = viewModel.isReimburses,
+                destination = viewModel.destination,
+                notes = viewModel.notes
+            )
+            rideDao.updateRide(updatedRide)
+        }
+    }
+
+    if (viewModel.wasNewRide == 1) { //new ride
+        if (viewModel.startKm != 0 || viewModel.startFuelKm != 0){
+            LaunchedEffect(Unit) {
+                val newRide = Ride(
+                    id = viewModel.ActualID,
+                    car = viewModel.car,
+                    date = viewModel.date,
+                    startTime = viewModel.startTime,
+                    startKm = viewModel.startKm,
+                    startFuelKm = viewModel.startFuelKm,
+                    isFinished = viewModel.isFinished,
+                    endTime = viewModel.endTime,
+                    endKm = viewModel.endKm,
+                    endFuelKm = viewModel.endFuelKm,
+                    distance = viewModel.distance,
+                    fuel = viewModel.fuel,
+                    price = viewModel.price,
+                    averageSpeed = viewModel.averageSpeed,
+                    rideTime = viewModel.rideTime,
+                    isPersonal = viewModel.isPersonal,
+                    isFamily = viewModel.isFamily,
+                    isBoys = viewModel.isBoys,
+                    isReimburses = viewModel.isReimburses,
+                    destination = viewModel.destination,
+                    notes = viewModel.notes
+                )
+                rideDao.insertRide(newRide)
+            }
+        viewModel.new_click = 0
+        viewModel.wasNewRide = 0
+        viewModel.lastActualID = viewModel.ActualID
+    }
+    }
+}
 
 
+@Composable
+fun Vypocty(){
 
 }
 
@@ -691,28 +772,6 @@ fun Prvni() {
                     tint = Color(Ccolor)
                 )
             }
-            //OutlinedTextField(
-            //    value = selectedTime,
-            //    onValueChange = {}, // readonly pole
-            //    readOnly = true,
-            //    enabled = false, // aby nešlo psát
-            //    colors = OutlinedTextFieldDefaults.colors(
-            //        disabledBorderColor = Color(Ecolor),
-            //        disabledTextColor = Color(Ccolor)
-            //    ),
-            //    leadingIcon = {
-            //        IconButton(onClick = { showDialog = true }) {
-            //            Icon(
-            //                imageVector = Icons.Default.AccessTime,
-            //                contentDescription = "Vybrat čas",
-            //                tint = Color(Ccolor),
-            //                modifier = Modifier.size(20.dp).padding(0.dp)
-            //            )
-            //        }
-            //    },
-            //    modifier = Modifier.clickable { showDialog = true }.width(80.dp),
-            //    shape = RoundedCornerShape(30.dp)
-            //)
 
             if (showDialog) {
                 Dialog(onDismissRequest = { showDialog = false }) {
