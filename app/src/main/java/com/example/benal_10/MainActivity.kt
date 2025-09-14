@@ -540,6 +540,8 @@ fun Ulozeni() {
     val viewModel: CounterViewModel = viewModel()
     viewModel.new_click = 0
     viewModel.ulozit = 0
+    viewModel.ActualID = 0
+
 
 
 }
