@@ -237,6 +237,8 @@ class CounterViewModel: ViewModel() {
     var ulozit by mutableIntStateOf(0)
 
     var wasNewRide by mutableIntStateOf(0)
+
+
 }
 
 
@@ -340,7 +342,7 @@ fun MyTopAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { viewModel.new_click = 1 }) {
+            IconButton(onClick = { viewModel.new_click += 1 }) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "Localized description"
@@ -389,6 +391,8 @@ fun Nacteni() {
             viewModel.destination = lastRideObject.destination ?: ""
             viewModel.notes = lastRideObject.notes ?: ""
             viewModel.lastActualID = lastRideObject.id
+            viewModel.wasNewRide = 0
+            viewModel.new_click = 0
         } else {
             viewModel.ActualID = 0 // Nebo nějaká jiná indikace
         }
@@ -405,6 +409,8 @@ fun Nacteni() {
     Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
     Text("Aktuální LastId z ViewModelu: ${viewModel.lastActualID}")
     Text("Aktualni isFinished z viewmodelu: ${viewModel.isFinished}")
+    Text("Aktualni wasNewRide z viewmodelu: ${viewModel.wasNewRide}")
+    Text("Aktualni new_click z viewmodelu: ${viewModel.new_click}")
 }
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
@@ -439,7 +445,7 @@ fun Nova_jizda(){
     viewModel.wasNewRide = 1
     viewModel.new_click = 2
 }
-//fungue git?
+
 @Composable
 fun Ulozeni() {
     val viewModel: CounterViewModel = viewModel()
@@ -478,6 +484,7 @@ fun Ulozeni() {
                 notes = viewModel.notes
             )
             rideDao.updateRide(updatedRide)
+
         }
     }
 
@@ -510,11 +517,11 @@ fun Ulozeni() {
                 val newId = rideDao.insertRide(newRide).toInt()
                 viewModel.ActualID = newId
             }
-        viewModel.new_click = 0
         viewModel.wasNewRide = 0
         viewModel.lastActualID = viewModel.ActualID
     }
     }
+    viewModel.new_click = 0
 }
 
 

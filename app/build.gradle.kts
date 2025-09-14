@@ -68,6 +68,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0") // nebo nejnovější
+    implementation(platform("androidx.compose:compose-bom:2025.08.00"))
     val room_version = "2.7.2"
 
     implementation("androidx.room:room-runtime:$room_version")
