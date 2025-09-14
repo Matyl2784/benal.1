@@ -452,6 +452,8 @@ fun Ulozeni() {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val rideDao = db.rideDao()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
         viewModel.isFinished = true
@@ -484,6 +486,9 @@ fun Ulozeni() {
                 notes = viewModel.notes
             )
             rideDao.updateRide(updatedRide)
+            scope.launch {
+                snackbarHostState.showSnackbar("Byla updatnuta jízda s ID: ${viewModel.ActualID}")
+            }
 
         }
     }
@@ -516,6 +521,9 @@ fun Ulozeni() {
                 )
                 val newId = rideDao.insertRide(newRide).toInt()
                 viewModel.ActualID = newId
+                scope.launch {
+                    snackbarHostState.showSnackbar("Byla uložena nová jízda s ID: ${viewModel.ActualID}")
+                }
             }
         viewModel.wasNewRide = 0
         viewModel.lastActualID = viewModel.ActualID
