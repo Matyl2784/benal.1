@@ -238,6 +238,8 @@ class CounterViewModel: ViewModel() {
 
     var wasNewRide by mutableIntStateOf(0)
 
+    var restarovat by mutableIntStateOf(0)
+
 
 }
 
@@ -292,6 +294,7 @@ class MainActivity : ComponentActivity() {
                         Mezera(mezera = 25)
                         Tlacitko()
                         Greeting(name = "Android")
+                        Restart()
                         Info(text = text)
                         Zadani(text = text, onTextChange = { newText -> text = newText })
                         NumberInputExample(cislo = cislo, onCisloChange = { newCislo -> cislo = newCislo })
@@ -1053,12 +1056,19 @@ fun Greeting(name: String) {
 fun Info(text: String) {
     val context = LocalContext.current
     val rideDao = remember { AppDatabase.getDatabase(context).rideDao() }
+    val viewModel: CounterViewModel = viewModel()
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         // Načtení všech jízd z DB
         rides = rideDao.getAllRides()
+    }
+    if (viewModel.restarovat == 1) {
+        LaunchedEffect(Unit) {
+            rides = rideDao.getAllRides()
+            viewModel.restarovat = 0
+        }
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
@@ -1098,6 +1108,14 @@ fun formatTime(millis: Long): String {
     val date = Date(millis)
     val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
     return formatter.format(date)
+}
+
+@Composable
+fun Restart() {
+    val viewModel: CounterViewModel = viewModel()
+    Button(onClick = {viewModel.restarovat = 1},
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xffF1F2F6)))
+    {Text("Znovu načíst všechny jízdy")}
 }
 
 
