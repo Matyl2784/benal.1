@@ -123,6 +123,7 @@ import android.inputmethodservice.Keyboard.Row
 import androidx.compose.material.icons.filled.History
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.unit.sp
 
 val WBcolors = listOf(0xffEBEBEB, 0xffF6F5F4, 0xff0f213c, 0xff1c3c6c, 0xff1d70a2)
 
@@ -293,7 +294,8 @@ class MainActivity : ComponentActivity() {
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
                         Nacteni()
-                        Mezera(mezera = 35)
+                        RideInfoCard()
+                        Mezera(mezera = 5)
                         Prvni()
                         Mezera(mezera = 25)
                         Druhy()
@@ -431,18 +433,59 @@ fun Nacteni() {
         viewModel.selectedOption = "Boys"
     }
 
-    Text("Datum jizdy: ${viewModel.date}")
 
-    if (viewModel.endTime == 0L && viewModel.startTime != 0L) {
-        Text("Aktuální Start KM: ${viewModel.startKm}")
-        Text("Aktuální Start Fuel KM: ${viewModel.startFuelKm}")
-        Text("DOKONČI JÍZDU!")
-    }
-    else {
-        Text("End KM z minulé jízdy: ${viewModel.lastEndKm}")
-        Text("End Fuel KM z minulé jízdy: ${viewModel.lastEndFuelKm}")
+}
+@Composable
+fun RideInfoCard() {
+    val viewModel: CounterViewModel = viewModel()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(Color(0xFFF5F5F5), RoundedCornerShape(15.dp))
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Datum jízdy: ${viewModel.date}",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color(0xFF333333)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (viewModel.endTime == 0L && viewModel.startTime != 0L) {
+            Text(
+                text = "Aktuální Start KM: ${viewModel.startKm}",
+                fontSize = 16.sp,
+                color = Color(0xFF555555)
+            )
+            Text(
+                text = "Aktuální Start Fuel KM: ${viewModel.startFuelKm}",
+                fontSize = 16.sp,
+                color = Color(0xFF555555)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "DOKONČI JÍZDU!",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Red
+            )
+        } else {
+            Text(
+                text = "End KM z minulé jízdy: ${viewModel.lastEndKm}",
+                fontSize = 16.sp,
+                color = Color(0xFF555555)
+            )
+            Text(
+                text = "End Fuel KM z minulé jízdy: ${viewModel.lastEndFuelKm}",
+                fontSize = 16.sp,
+                color = Color(0xFF555555)
+            )
+        }
     }
 }
+
 
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
