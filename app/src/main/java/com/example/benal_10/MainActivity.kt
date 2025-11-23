@@ -1046,7 +1046,7 @@ fun Treti() {
                 verticalArrangement = Arrangement.spacedBy(1.dp), // mezera mezi boxy
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val suggestions = listOf("Doma", "Práce", "Škola", "Obchod", "Letiště")
+                val suggestions = listOf("Doma", "Práce", "Škola", "Trénink")
                 var expanded by remember { mutableStateOf(false) }
                 var text by remember { mutableStateOf(viewModel.from) }
 
@@ -1099,7 +1099,7 @@ fun Treti() {
                     }
                 }
 
-                val suggestions2 = listOf("Doma", "Práce", "Škola", "Obchod", "Letiště")
+                val suggestions2 = listOf("Doma", "Práce", "Škola", "Trénink")
                 var expanded2 by remember { mutableStateOf(false) }
                 var text2 by remember { mutableStateOf(viewModel.destination) }
 
@@ -1152,22 +1152,6 @@ fun Treti() {
                     }
                 }
 
-                OutlinedTextField(
-                    value = viewModel.destination,
-                    onValueChange = { viewModel.destination= it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(30.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(Dcolor),
-                        unfocusedBorderColor = Color(Ecolor),
-                        cursorColor = Color(Dcolor),
-                        focusedLabelColor = Color(Dcolor),
-                        unfocusedTextColor = Color(Ccolor),
-                        focusedTextColor = Color(Ccolor)
-                    ),
-                    label = { Text("Destination") },
-                    placeholder = { Text("Např. Práce") }
-                )
                 OutlinedTextField(
                     value = viewModel.notes,
                     onValueChange = { viewModel.notes = it },
