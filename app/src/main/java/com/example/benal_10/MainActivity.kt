@@ -243,6 +243,9 @@ class CounterViewModel: ViewModel() {
 
     var ulozeniNewRide by mutableIntStateOf(0)
 
+    var selectedOption by mutableStateOf("Personal")
+
+
 
 }
 
@@ -405,6 +408,7 @@ fun Nacteni() {
     Text("Aktualni isFinished z viewmodelu: ${viewModel.isFinished}")
     Text("Aktualni wasNewRide z viewmodelu: ${viewModel.wasNewRide}")
     Text("Aktualni new_click z viewmodelu: ${viewModel.new_click}")
+    Text("aktualni option z viewmodelu: ${viewModel.selectedOption}")
 }
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
@@ -455,6 +459,22 @@ fun Ulozeni() {
         viewModel.isFinished = true
         viewModel.endTime = System.currentTimeMillis()
         Vypocty()
+    }
+
+    if (viewModel.selectedOption == "Personal"){
+        viewModel.isPersonal = true
+        viewModel.isFamily = false
+        viewModel.isBoys = false
+    }
+    if (viewModel.selectedOption == "Family"){
+        viewModel.isFamily = true
+        viewModel.isPersonal = false
+        viewModel.isBoys = false
+    }
+    if (viewModel.selectedOption == "Boys"){
+        viewModel.isBoys = true
+        viewModel.isPersonal = false
+        viewModel.isFamily = false
     }
 
     if (viewModel.ActualID == viewModel.lastActualID) { //update
@@ -946,7 +966,8 @@ fun Treti() {
         ) {
             // ==== LEVÁ strana - radio buttons ====
             val radioOptions = listOf("Personal", "Family", "Boys")
-            val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+            val selected = viewModel.selectedOption
+
 
             Column {
                 radioOptions.forEach { text ->
@@ -954,14 +975,14 @@ fun Treti() {
                         Modifier
                             .height(40.dp)
                             .selectable(
-                                selected = (text == selectedOption),
-                                onClick = { onOptionSelected(text) }
+                                selected = (text == selected),
+                                onClick = { viewModel.selectedOption = text }
                             )
                             .padding(horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = (text == selectedOption),
+                            selected = (text == selected),
                             onClick = null
                         )
                         Text(
