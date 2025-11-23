@@ -314,7 +314,6 @@ fun MyTopAppBar(
     drawerState: DrawerState
 ) {
     val viewModel: CounterViewModel = viewModel()
-    val data: CounterViewModel = viewModel()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -323,10 +322,10 @@ fun MyTopAppBar(
         ),
         title = {
             Text(
-                "Ford - ride: ${data.ActualID}",
+                "Ford ride: ${viewModel.ActualID}, ${formatTime(viewModel.startTime)} - ${if (viewModel.endTime == 0L) "null" else formatTime(viewModel.endTime)}",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(end = 125.dp)
+                modifier = Modifier.padding(end = 10.dp)
             )
         },
         navigationIcon = {
@@ -412,6 +411,7 @@ fun Nacteni() {
     if (viewModel.isBoys == true){
         viewModel.selectedOption = "Boys"
     }
+
     Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
     Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
     Text("Aktuální LastId z ViewModelu: ${viewModel.lastActualID}")
@@ -419,6 +419,7 @@ fun Nacteni() {
     Text("Aktualni wasNewRide z viewmodelu: ${viewModel.wasNewRide}")
     Text("Aktualni new_click z viewmodelu: ${viewModel.new_click}")
     Text("aktualni option z viewmodelu: ${viewModel.selectedOption}")
+    Text("datum jizdy: ${viewModel.date}")
 }
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
