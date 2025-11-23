@@ -212,6 +212,8 @@ class CounterViewModel: ViewModel() {
     var ulozeniNewRide by mutableIntStateOf(0)
 
     var selectedOption by mutableStateOf("Personal")
+    var message by mutableStateOf("")
+
 
 
 
@@ -256,6 +258,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                        MessageSnackbar()
                         Nacteni()
                         RideInfoCard()
                         Mezera(mezera = 5)
@@ -491,8 +494,6 @@ fun Ulozeni() {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val rideDao = db.rideDao()
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     viewModel.startTime = System.currentTimeMillis()
 
@@ -546,10 +547,6 @@ fun Ulozeni() {
                 notes = viewModel.notes
             )
             rideDao.updateRide(updatedRide)
-            scope.launch {
-                snackbarHostState.showSnackbar("Byla updatnuta jízda s ID: ${viewModel.ActualID}")
-            }
-
         }
     }
 
@@ -582,16 +579,46 @@ fun Ulozeni() {
                 )
                 val newId = rideDao.insertRide(newRide).toInt()
                 viewModel.ActualID = newId
-                scope.launch {
-                    snackbarHostState.showSnackbar("Byla uložena nová jízda s ID: ${viewModel.ActualID}")
-                }
             }
         viewModel.wasNewRide = 0
         viewModel.lastActualID = viewModel.ActualID
     }
     }
+    viewModel.message = "Succeed! ✅" // zpráva
     viewModel.new_click = 0
 }
+
+@Composable
+fun MessageSnackbar() {
+    val viewModel: CounterViewModel = viewModel()
+    if (viewModel.message.isNotEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .wrapContentHeight()
+                .shadow(8.dp, RoundedCornerShape(16.dp))
+                .background(Color(0xFF4CAF50), RoundedCornerShape(16.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = viewModel.message,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        LaunchedEffect(viewModel.message) {
+            kotlinx.coroutines.delay(1575) // zobrazí 3,5 sekundy
+            viewModel.message = ""
+        }
+    }
+}
+
 
 
 @Composable
