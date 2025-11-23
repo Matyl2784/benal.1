@@ -1090,7 +1090,7 @@ fun Info(text: String) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Seznam jízd:")
 
-        rides.forEach { ride ->
+        rides.asReversed().forEach { ride ->
             Text(
                 "Date: ${ride.date}, " +
                         "Start Time: ${ride.startTime?.let { formatTime(it) } ?: "-"}, " +
