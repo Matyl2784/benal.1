@@ -402,6 +402,16 @@ fun Nacteni() {
         Nova_jizda()
         viewModel.new_click == 2
     }
+
+    if (viewModel.isPersonal == true){
+        viewModel.selectedOption = "Personal"
+    }
+    if (viewModel.isFamily == true){
+        viewModel.selectedOption = "Family"
+    }
+    if (viewModel.isBoys == true){
+        viewModel.selectedOption = "Boys"
+    }
     Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
     Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
     Text("Aktuální LastId z ViewModelu: ${viewModel.lastActualID}")
