@@ -1,5 +1,4 @@
 package com.example.benal_10
-
 import android.content.Context
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -7,14 +6,11 @@ import androidx.room.*
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.Room
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
-
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Date
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.example.benal_10.ui.theme.Benal_10Theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Button
-import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.*
@@ -51,7 +46,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.ModalDrawerSheet
@@ -62,64 +56,35 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.DrawerState
 import androidx.compose.ui.draw.clip
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Refresh
 import kotlin.String
-
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import java.util.Calendar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.Dialog
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.outlined.Save
 import androidx.compose.foundation.selection.selectable
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel // Keep this import
-import androidx.compose.ui.platform.LocalContext // You'll need this for context
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.room.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import java.util.*
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import android.inputmethodservice.Keyboard.Row
 import androidx.compose.material.icons.filled.History
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.focus.onFocusChanged
@@ -200,7 +165,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "app_database"
                 )
                     // POZOR: pro vývoj. Zničí data při změně schématu.
-                    .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }
             }
@@ -287,7 +251,6 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         MyTopAppBar(scope, drawerState)
                     }) { innerPadding ->
-                    var text by remember { mutableStateOf("") }
 
                     Column(modifier = Modifier
                         .fillMaxSize()
@@ -303,7 +266,7 @@ class MainActivity : ComponentActivity() {
                         Treti()
                         Mezera(mezera = 25)
                         Restart()
-                        Info(text = text)
+                        Info()
                     }
                 }
             }}
@@ -1219,7 +1182,6 @@ fun Treti() {
 }
 
 
-
 fun formatInGroupsOfThreeFromEnd(input: String): String {
     val clean = input.replace(" ", "")
     val reversed = clean.reversed()
@@ -1228,33 +1190,8 @@ fun formatInGroupsOfThreeFromEnd(input: String): String {
 }
 
 
-
-//@Composable
-//fun Info(text: String) {
-//    val context = LocalContext.current
-//    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
-//
-//    var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
-//
-//    LaunchedEffect(Unit) {
-//        // tohle se spustí jednou při vykreslení
-//        rides = rideDao.getAllRides()
-//    }
-//
-//    Column(modifier = Modifier.padding(16.dp)) {
-//        Text("Seznam jízd:")
-//        rides.forEach { ride ->
-//            Text("Date: ${ride.date}, Start Time: ${SimpleDateFormat("HH:mm", ride.startTime)}, Start km: ${ride.startKm}, End Time ${ride.endTime}, End km: ${ride.endKm ?: "-"}, Distance: ${ride.distance} km, Fuel: ${ride.fuel} l, Price: ${ride.price} Kč, Average speed: ${ride.averageSpeed} km/h, Ride time: ${ride.rideTime} min, Car: ${ride.car}, Notes: ${ride.notes}, ID: ${ride.id}, Destination: ${ride.destination}, Start fuel km: ${ride.startFuelKm}, End fuel km: ${ride.endFuelKm}\n")
-//        }
-//    }
-//    Text(
-//        text = "novy text: $text",
-//        color = Color.Red
-//    )
-//}
-
 @Composable
-fun Info(text: String) {
+fun Info() {
     val context = LocalContext.current
     val rideDao = remember { AppDatabase.getDatabase(context).rideDao() }
     val viewModel: CounterViewModel = viewModel()
@@ -1293,7 +1230,7 @@ fun Info(text: String) {
                 Column(modifier = Modifier.padding(12.dp)) {
 
                     TableRow("Date", ride.date)
-                    TableRow("Start Time", ride.startTime?.let { formatTime(it) } ?: "-")
+                    TableRow("Start Time", ride.startTime.let { formatTime(it) })
                     TableRow("Start km", ride.startKm ?: "-")
                     TableRow("Start fuel km", ride.startFuelKm ?: "-")
                     TableRow("End Time", ride.endTime?.let { formatTime(it) } ?: "-")
