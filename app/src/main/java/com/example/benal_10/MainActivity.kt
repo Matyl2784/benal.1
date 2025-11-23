@@ -1239,7 +1239,9 @@ fun Info() {
                     TableRow("Distance", "${ride.distance ?: "-"} km")
                     TableRow("Fuel", "${ride.fuel ?: "-"} L")
                     TableRow("Price", "${ride.price ?: "-"} Kč")
-                    TableRow("Type", "${if (ride.isPersonal == true) "Personal" else if (ride.isFamily == true) "Family" else if (ride.isBoys == true) "Boys" else "-"}")
+                    TableRow("Type",
+                        if (ride.isPersonal == true) "Personal" else if (ride.isFamily == true) "Family" else if (ride.isBoys == true) "Boys" else "-"
+                    )
                     TableRow("Avg speed", "${ride.averageSpeed ?: "-"} km/h")
                     TableRow("Ride time", "${ride.rideTime ?: "-"} s")
                     TableRow("Notes", ride.notes ?: "-")
