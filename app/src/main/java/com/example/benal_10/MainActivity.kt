@@ -567,12 +567,21 @@ fun Ulozeni() {
 fun Vypocty(){
     val viewModel: CounterViewModel = viewModel()
 
-    viewModel.distance = viewModel.endKm - viewModel.startKm
+    if (viewModel.startKm != 0 || viewModel.endKm != 0) {
+        viewModel.distance = viewModel.endKm - viewModel.startKm
+    }
+    else {
+        viewModel.distance = viewModel.startFuelKm - viewModel.endFuelKm
+    }
     viewModel.rideTime = ((viewModel.endTime - viewModel.startTime) / 1000).toInt()
     viewModel.averageSpeed = (viewModel.distance.toFloat() / (viewModel.rideTime.toFloat() / 60 / 60)).toInt()
-    viewModel.fuel = (viewModel.startFuelKm - viewModel.endFuelKm).toFloat()
+    if (viewModel.startFuelKm != 0 || viewModel.endFuelKm != 0) {
+        viewModel.fuel = (viewModel.startFuelKm - viewModel.endFuelKm).toFloat()
+    }
+    else {
+        viewModel.fuel = viewModel.distance.toFloat()
+    }
     viewModel.price = (viewModel.fuel / 9.7F) * 34
-
 
 }
 
