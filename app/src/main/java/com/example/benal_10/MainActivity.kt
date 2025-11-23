@@ -120,6 +120,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import android.inputmethodservice.Keyboard.Row
+import androidx.compose.material.icons.filled.History
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.focus.onFocusChanged
 
 val WBcolors = listOf(0xffEBEBEB, 0xffF6F5F4, 0xff0f213c, 0xff1c3c6c, 0xff1d70a2)
 
@@ -227,9 +230,9 @@ class CounterViewModel: ViewModel() {
     var destination by mutableStateOf("")
     var notes by mutableStateOf("")
 
-    var lastEndKm by mutableStateOf("End KM")
+    var lastEndKm by mutableIntStateOf(0)
 
-    var lastEndFuelKm by mutableStateOf("End Fuel KM")
+    var lastEndFuelKm by mutableIntStateOf(0)
 
     var lastActualID by mutableIntStateOf(-1)
 
@@ -313,8 +316,20 @@ fun MyTopAppBar(
     scope: CoroutineScope,
     drawerState: DrawerState
 ) {
+
     val viewModel: CounterViewModel = viewModel()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
+    val start = if (viewModel.startTime == 0L) null else formatTime(viewModel.startTime)
+    val end = if (viewModel.endTime == 0L) null else formatTime(viewModel.endTime)
+
+    val result = when {
+        start == null && end == null -> "nová jízda"
+        start != null && end == null -> "$start - X"
+        start != null && end != null -> "$start - $end"
+        else -> "Error"
+    }
+
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = Color(Dcolor),
@@ -322,7 +337,7 @@ fun MyTopAppBar(
         ),
         title = {
             Text(
-                "Ford ride: ${viewModel.ActualID}, ${formatTime(viewModel.startTime)} - ${if (viewModel.endTime == 0L) "null" else formatTime(viewModel.endTime)}",
+                "Ford ride: ${viewModel.ActualID}, ${result}",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(end = 10.dp)
@@ -364,16 +379,20 @@ fun Mezera(mezera: Int) {
 fun Nacteni() {
     val context = LocalContext.current
     val viewModel: CounterViewModel = viewModel()
-    val rideDao = remember { AppDatabase.getDatabase(context).rideDao() } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
+    val rideDao = remember {
+        AppDatabase.getDatabase(context).rideDao()
+    } // Optimalizace, aby se DAO nevytvářelo při každé rekompozici
 
     LaunchedEffect(key1 = rideDao) {
-        val lastRideObject = rideDao.observeLastRide().firstOrNull() // Získá aktuální hodnotu z Flow
+        val lastRideObject =
+            rideDao.observeLastRide().firstOrNull() // Získá aktuální hodnotu z Flow
         if (lastRideObject != null) {
             viewModel.ActualID = lastRideObject.id
             viewModel.car = lastRideObject.car
             viewModel.date = lastRideObject.date
             viewModel.startTime = lastRideObject.startTime
-            viewModel.startKm = lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
+            viewModel.startKm =
+                lastRideObject.startKm ?: 0 // Ošetření pro případ, že startKm je null
             viewModel.startFuelKm = lastRideObject.startFuelKm ?: 0
             viewModel.isFinished = lastRideObject.isFinished
             viewModel.endTime = lastRideObject.endTime ?: 0
@@ -402,25 +421,29 @@ fun Nacteni() {
         viewModel.new_click == 2
     }
 
-    if (viewModel.isPersonal == true){
+    if (viewModel.isPersonal == true) {
         viewModel.selectedOption = "Personal"
     }
-    if (viewModel.isFamily == true){
+    if (viewModel.isFamily == true) {
         viewModel.selectedOption = "Family"
     }
-    if (viewModel.isBoys == true){
+    if (viewModel.isBoys == true) {
         viewModel.selectedOption = "Boys"
     }
 
-    Text("Aktuální startKM z ViewModelu: ${viewModel.startKm}")
-    Text("Aktuální endKM z ViewModelu: ${viewModel.endKm}")
-    Text("Aktuální LastId z ViewModelu: ${viewModel.lastActualID}")
-    Text("Aktualni isFinished z viewmodelu: ${viewModel.isFinished}")
-    Text("Aktualni wasNewRide z viewmodelu: ${viewModel.wasNewRide}")
-    Text("Aktualni new_click z viewmodelu: ${viewModel.new_click}")
-    Text("aktualni option z viewmodelu: ${viewModel.selectedOption}")
-    Text("datum jizdy: ${viewModel.date}")
+    Text("Datum jizdy: ${viewModel.date}")
+
+    if (viewModel.endTime == 0L && viewModel.startTime != 0L) {
+        Text("Aktuální Start KM: ${viewModel.startKm}")
+        Text("Aktuální Start Fuel KM: ${viewModel.startFuelKm}")
+        Text("DOKONČI JÍZDU!")
+    }
+    else {
+        Text("End KM z minulé jízdy: ${viewModel.lastEndKm}")
+        Text("End Fuel KM z minulé jízdy: ${viewModel.lastEndFuelKm}")
+    }
 }
+
 //nacteni neuspesne (neni zadna jizda) - actual = 1, last = 0
 //nacteni uspesne (nacetlo to finished jizdu) - actual = 11, last = 10
 //nacteni uspesne (nacetlo to nefinished jizdu) - actual = 10, last = 10
@@ -430,13 +453,13 @@ fun Nacteni() {
 fun Nova_jizda(){
     val viewModel: CounterViewModel = viewModel()
 
-    viewModel.lastEndKm = viewModel.endKm.toString()
-    viewModel.lastEndFuelKm = viewModel.endFuelKm.toString()
+    viewModel.lastEndKm = viewModel.endKm
+    viewModel.lastEndFuelKm = viewModel.endFuelKm
     viewModel.lastActualID = viewModel.ActualID
 
     viewModel.car = "Ford Focus"
     viewModel.date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())
-    viewModel.startTime = System.currentTimeMillis()
+    viewModel.startTime = 0
     viewModel.isFinished = false
     viewModel.endTime = 0
     viewModel.isPersonal = true
@@ -464,6 +487,8 @@ fun Ulozeni() {
     val rideDao = db.rideDao()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    viewModel.startTime = System.currentTimeMillis()
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
         viewModel.ulozeniNewRide = 1
@@ -640,7 +665,7 @@ fun Prvni() {
             )
             IconToggleButton(
                 checked = checked,
-                onCheckedChange = { checked = it },
+                onCheckedChange = { checked = it; viewModel.startKm = viewModel.lastEndKm },
                 colors = IconButtonDefaults.iconToggleButtonColors(checkedContentColor = Color(0xff888888)),
                 modifier = Modifier
                     .padding(top = 10.dp)
@@ -649,7 +674,7 @@ fun Prvni() {
                 if (checked) {
                     Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                 } else {
-                    Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    Icon(Icons.Filled.History, contentDescription = "Localized description")
                 }
             }
             IconButton(onClick = { viewModel.ulozit += 1 }, modifier = Modifier
@@ -701,7 +726,7 @@ fun Prvni() {
             )
             IconToggleButton(
                 checked = checked,
-                onCheckedChange = { checked = it },
+                onCheckedChange = { checked = it; viewModel.startFuelKm = viewModel.lastEndFuelKm },
                 colors = IconButtonDefaults.iconToggleButtonColors(
                     checkedContentColor = Color(
                         0xff888888
@@ -714,7 +739,7 @@ fun Prvni() {
                 if (checked) {
                     Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                 } else {
-                    Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    Icon(Icons.Filled.History, contentDescription = "Localized description")
                 }
             }
 
@@ -1021,22 +1046,111 @@ fun Treti() {
                 verticalArrangement = Arrangement.spacedBy(1.dp), // mezera mezi boxy
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                OutlinedTextField(
-                    value = viewModel.from,
-                    onValueChange = { viewModel.from = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(30.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(Dcolor),
-                        unfocusedBorderColor = Color(Ecolor),
-                        cursorColor = Color(Dcolor),
-                        focusedLabelColor = Color(Dcolor),
-                        unfocusedTextColor = Color(Ccolor),
-                        focusedTextColor = Color(Ccolor)
-                    ),
-                    label = { Text("From location") },
-                    placeholder = { Text("Např. Doma") }
-                )
+                val suggestions = listOf("Doma", "Práce", "Škola", "Obchod", "Letiště")
+                var expanded by remember { mutableStateOf(false) }
+                var text by remember { mutableStateOf(viewModel.from) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = {
+                            text = it
+                            viewModel.from = it
+                            expanded = true // otevře nabídku při psaní
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { focusState ->
+                            if (focusState.isFocused) expanded = true // otevře při kliknutí do textu
+                        },
+                        shape = RoundedCornerShape(30.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(Dcolor),
+                            unfocusedBorderColor = Color(Ecolor),
+                            cursorColor = Color(Dcolor),
+                            focusedLabelColor = Color(Dcolor),
+                            unfocusedTextColor = Color(Ccolor),
+                            focusedTextColor = Color(Ccolor)
+                        ),
+                        label = { Text("From location") },
+                        placeholder = { Text("Např. Doma") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                    )
+
+                    val filteredSuggestions = suggestions.filter {
+                        it.contains(text, ignoreCase = true)
+                    }
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        filteredSuggestions.forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = { Text(suggestion) },
+                                onClick = {
+                                    text = suggestion
+                                    viewModel.from = suggestion
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                val suggestions2 = listOf("Doma", "Práce", "Škola", "Obchod", "Letiště")
+                var expanded2 by remember { mutableStateOf(false) }
+                var text2 by remember { mutableStateOf(viewModel.destination) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded2,
+                    onExpandedChange = { expanded2 = !expanded2 }
+                ) {
+                    OutlinedTextField(
+                        value = text2,
+                        onValueChange = {
+                            text2 = it
+                            viewModel.destination = it
+                            expanded2 = true // otevře nabídku při psaní
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused) expanded2 = true // otevře při kliknutí do textu
+                            },
+                        shape = RoundedCornerShape(30.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(Dcolor),
+                            unfocusedBorderColor = Color(Ecolor),
+                            cursorColor = Color(Dcolor),
+                            focusedLabelColor = Color(Dcolor),
+                            unfocusedTextColor = Color(Ccolor),
+                            focusedTextColor = Color(Ccolor)
+                        ),
+                        label = { Text("Destination") },
+                        placeholder = { Text("Např. Práce") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded2) }
+                    )
+
+                    val filteredSuggestions = suggestions2.filter {
+                        it.contains(text2, ignoreCase = true)
+                    }
+                    ExposedDropdownMenu(
+                        expanded = expanded2,
+                        onDismissRequest = { expanded2 = false }
+                    ) {
+                        filteredSuggestions.forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = { Text(suggestion) },
+                                onClick = {
+                                    text2 = suggestion
+                                    viewModel.destination = suggestion
+                                    expanded2 = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = viewModel.destination,
@@ -1072,9 +1186,12 @@ fun Treti() {
 
                 )
             }
+
         }
     }
 }
+
+
 
 fun formatInGroupsOfThreeFromEnd(input: String): String {
     val clean = input.replace(" ", "")
@@ -1117,10 +1234,7 @@ fun Info(text: String) {
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
 
-    LaunchedEffect(Unit) {
-        // Načtení všech jízd z DB
-        rides = rideDao.getAllRides()
-    }
+    // Refresh při restartu
     if (viewModel.restarovat == 1) {
         LaunchedEffect(Unit) {
             rides = rideDao.getAllRides()
@@ -1128,32 +1242,73 @@ fun Info(text: String) {
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Seznam jízd:")
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
 
+        Text(
+            "Seznam jízd",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Jízdy v opačném pořadí
         rides.asReversed().forEach { ride ->
-            Text(
-                "Date: ${ride.date}, " +
-                        "Start Time: ${ride.startTime?.let { formatTime(it) } ?: "-"}, " +
-                        "Start km: ${ride.startKm ?: "-"}, " +
-                        "End Time: ${ride.endTime?.let { formatTime(it) } ?: "-"}, " +
-                        "End km: ${ride.endKm ?: "-"}, " +
-                        "Distance: ${ride.distance ?: "-"} km, " +
-                        "Fuel: ${ride.fuel ?: "-"} l, " +
-                        "Price: ${ride.price ?: "-"} Kč, " +
-                        "Average speed: ${ride.averageSpeed ?: "-"} km/h, " +
-                        "Ride time: ${ride.rideTime ?: "-"} s, " +
-                        "Car: ${ride.car}, " +
-                        "Notes: ${ride.notes ?: "-"}, " +
-                        "ID: ${ride.id}, " +
-                        "Destination: ${ride.destination ?: "-"}, " +
-                        "Start fuel km: ${ride.startFuelKm ?: "-"}, " +
-                        "End fuel km: ${ride.endFuelKm ?: "-"}, " +
-                        "Is finished: ${ride.isFinished}\n"
-            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+
+                    TableRow("Date", ride.date)
+                    TableRow("Start Time", ride.startTime?.let { formatTime(it) } ?: "-")
+                    TableRow("Start km", ride.startKm ?: "-")
+                    TableRow("Start fuel km", ride.startFuelKm ?: "-")
+                    TableRow("End Time", ride.endTime?.let { formatTime(it) } ?: "-")
+                    TableRow("End km", ride.endKm ?: "-")
+                    TableRow("End fuel km", ride.endFuelKm ?: "-")
+                    TableRow("Distance", "${ride.distance ?: "-"} km")
+                    TableRow("Fuel", "${ride.fuel ?: "-"} L")
+                    TableRow("Price", "${ride.price ?: "-"} Kč")
+                    TableRow("Type", "${if (ride.isPersonal == true) "Personal" else if (ride.isFamily == true) "Family" else if (ride.isBoys == true) "Boys" else "-"}")
+                    TableRow("Avg speed", "${ride.averageSpeed ?: "-"} km/h")
+                    TableRow("Ride time", "${ride.rideTime ?: "-"} s")
+                    TableRow("Notes", ride.notes ?: "-")
+                    TableRow("From", ride.from ?: "-")
+                    TableRow("Destination", ride.destination ?: "-")
+                    TableRow("Is finished", ride.isFinished.toString())
+                    TableRow("Car", ride.car)
+                    TableRow("ID", ride.id.toString())
+                }
+            }
         }
     }
 }
+@Composable
+fun TableRow(label: String, value: Any?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+    ) {
+        Text(
+            text = "$label:",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value?.toString() ?: "-",
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+
 
 // Pomocná funkce pro formátování času
 fun formatTime(millis: Long): String {
