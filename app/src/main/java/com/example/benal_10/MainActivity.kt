@@ -121,7 +121,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import android.inputmethodservice.Keyboard.Row
 
-
 val WBcolors = listOf(0xffEBEBEB, 0xffF6F5F4, 0xff0f213c, 0xff1c3c6c, 0xff1d70a2)
 
 var Acolor = WBcolors[0]
@@ -144,14 +143,15 @@ data class Ride(
     val endKm: Int? = null,
     val endFuelKm: Int? = null,
     val distance: Int? = null,
-    val fuel: Int? = null,
-    val price: Int? = null,
+    val fuel: Float? = null,
+    val price: Float? = null,
     val averageSpeed: Int? = null,
     val rideTime: Int? = null, //v sekundach
     val isPersonal: Boolean = false,
     val isFamily: Boolean = false,
     val isBoys: Boolean = false,
     val isReimburses: Boolean = false,
+    val from: String? = null,
     val destination: String? = null,
     val notes: String? = null
 )
@@ -215,14 +215,15 @@ class CounterViewModel: ViewModel() {
     var endKm by mutableIntStateOf(0)
     var endFuelKm by mutableIntStateOf(0)
     var distance by mutableIntStateOf(0)
-    var fuel by mutableIntStateOf(0)
-    var price by mutableIntStateOf(0)
+    var fuel by mutableFloatStateOf(0F)
+    var price by mutableFloatStateOf(0F)
     var averageSpeed by mutableIntStateOf(0)
     var rideTime by mutableIntStateOf(1)
     var isPersonal by mutableStateOf(false)
     var isFamily by mutableStateOf(false)
     var isBoys by mutableStateOf(false)
     var isReimburses by mutableStateOf(false)
+    var from by mutableStateOf("")
     var destination by mutableStateOf("")
     var notes by mutableStateOf("")
 
@@ -239,6 +240,8 @@ class CounterViewModel: ViewModel() {
     var wasNewRide by mutableIntStateOf(0)
 
     var restarovat by mutableIntStateOf(0)
+
+    var ulozeniNewRide by mutableIntStateOf(0)
 
 
 }
@@ -278,7 +281,6 @@ class MainActivity : ComponentActivity() {
                         MyTopAppBar(scope, drawerState)
                     }) { innerPadding ->
                     var text by remember { mutableStateOf("") }
-                    var cislo by remember { mutableStateOf("") }
 
                     Column(modifier = Modifier
                         .fillMaxSize()
@@ -292,12 +294,8 @@ class MainActivity : ComponentActivity() {
                         Mezera(mezera = 25)
                         Treti()
                         Mezera(mezera = 25)
-                        Tlacitko()
-                        Greeting(name = "Android")
                         Restart()
                         Info(text = text)
-                        Zadani(text = text, onTextChange = { newText -> text = newText })
-                        NumberInputExample(cislo = cislo, onCisloChange = { newCislo -> cislo = newCislo })
                     }
                 }
             }}
@@ -383,6 +381,7 @@ fun Nacteni() {
             viewModel.isFamily = lastRideObject.isFamily
             viewModel.isBoys = lastRideObject.isBoys
             viewModel.isReimburses = lastRideObject.isReimburses
+            viewModel.from = lastRideObject.from ?: ""
             viewModel.destination = lastRideObject.destination ?: ""
             viewModel.notes = lastRideObject.notes ?: ""
             viewModel.lastActualID = lastRideObject.id
@@ -396,7 +395,7 @@ fun Nacteni() {
         Nova_jizda()
         viewModel.new_click == 2
     }
-    if (viewModel.isFinished == true) {
+    if (viewModel.isFinished == true && viewModel.ulozeniNewRide == 0) {
         Nova_jizda()
         viewModel.new_click == 2
     }
@@ -429,6 +428,7 @@ fun Nova_jizda(){
     viewModel.isFamily = false
     viewModel.isBoys = false
     viewModel.isReimburses = false
+    viewModel.from = ""
     viewModel.destination = ""
     viewModel.notes = ""
     viewModel.startKm = 0
@@ -451,6 +451,7 @@ fun Ulozeni() {
     val snackbarHostState = remember { SnackbarHostState() }
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
+        viewModel.ulozeniNewRide = 1
         viewModel.isFinished = true
         viewModel.endTime = System.currentTimeMillis()
         Vypocty()
@@ -478,6 +479,7 @@ fun Ulozeni() {
                 isFamily = viewModel.isFamily,
                 isBoys = viewModel.isBoys,
                 isReimburses = viewModel.isReimburses,
+                from = viewModel.from,
                 destination = viewModel.destination,
                 notes = viewModel.notes
             )
@@ -512,6 +514,7 @@ fun Ulozeni() {
                     isFamily = viewModel.isFamily,
                     isBoys = viewModel.isBoys,
                     isReimburses = viewModel.isReimburses,
+                    from = viewModel.from,
                     destination = viewModel.destination,
                     notes = viewModel.notes
                 )
@@ -536,6 +539,8 @@ fun Vypocty(){
     viewModel.distance = viewModel.endKm - viewModel.startKm
     viewModel.rideTime = ((viewModel.endTime - viewModel.startTime) / 1000).toInt()
     viewModel.averageSpeed = (viewModel.distance.toFloat() / (viewModel.rideTime.toFloat() / 60 / 60)).toInt()
+    viewModel.fuel = (viewModel.startFuelKm - viewModel.endFuelKm).toFloat()
+    viewModel.price = (viewModel.fuel / 9.7F) * 34
 
 
 }
@@ -930,7 +935,7 @@ fun Treti() {
             .fillMaxWidth(0.88f)
             .clip(RoundedCornerShape(36.dp))
             .background(Color(Bcolor))
-            .height(150.dp)
+            .height(210.dp)
     ) {
         Row(
             modifier = Modifier
@@ -972,12 +977,29 @@ fun Treti() {
 
             Column(
                 modifier = Modifier.width(175.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), // mezera mezi boxy
+                verticalArrangement = Arrangement.spacedBy(1.dp), // mezera mezi boxy
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
+                    value = viewModel.from,
+                    onValueChange = { viewModel.from = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(30.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(Dcolor),
+                        unfocusedBorderColor = Color(Ecolor),
+                        cursorColor = Color(Dcolor),
+                        focusedLabelColor = Color(Dcolor),
+                        unfocusedTextColor = Color(Ccolor),
+                        focusedTextColor = Color(Ccolor)
+                    ),
+                    label = { Text("From location") },
+                    placeholder = { Text("Např. Doma") }
+                )
+
+                OutlinedTextField(
                     value = viewModel.destination,
-                    onValueChange = { viewModel.destination = it },
+                    onValueChange = { viewModel.destination= it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(30.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -989,9 +1011,8 @@ fun Treti() {
                         focusedTextColor = Color(Ccolor)
                     ),
                     label = { Text("Destination") },
-                    placeholder = { Text("Např. práce") }
+                    placeholder = { Text("Např. Práce") }
                 )
-
                 OutlinedTextField(
                     value = viewModel.notes,
                     onValueChange = { viewModel.notes = it },
@@ -1007,6 +1028,7 @@ fun Treti() {
                     ),
                     label = { Text("Notes") },
                     placeholder = { Text("Něco dalšího?") }
+
                 )
             }
         }
@@ -1020,12 +1042,6 @@ fun formatInGroupsOfThreeFromEnd(input: String): String {
     return grouped.reversed()
 }
 
-@Composable
-fun Greeting(name: String) {
-    Text(
-        text = "Hello $name!"
-    )
-}
 
 
 //@Composable
@@ -1096,11 +1112,6 @@ fun Info(text: String) {
             )
         }
     }
-
-    Text(
-        text = "novy text: $text",
-        color = Color.Red
-    )
 }
 
 // Pomocná funkce pro formátování času
@@ -1116,39 +1127,6 @@ fun Restart() {
     Button(onClick = {viewModel.restarovat = 1},
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xffF1F2F6)))
     {Text("Znovu načíst všechny jízdy")}
-}
-
-
-
-
-
-@Composable
-fun Tlacitko() {
-    val context = LocalContext.current
-    Button(onClick = {
-        val intent = Intent(context, MainActivity2::class.java)
-        context.startActivity(intent)
-    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xffF1F2F6)))
-    {Text("Přejít na druhou obrazovku")}
-}
-
-@Composable
-fun Zadani(text: String, onTextChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = text,
-        onValueChange = onTextChange,
-        label = { Text("Zadej text") }
-    )
-}
-
-@Composable
-fun NumberInputExample(cislo: String, onCisloChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = cislo,
-        onValueChange = onCisloChange,
-        label = { Text("Zadej text") },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-    )
 }
 
 
