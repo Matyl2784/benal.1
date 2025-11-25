@@ -468,7 +468,7 @@ fun Nova_jizda(){
 
     viewModel.car = "Ford Focus"
     viewModel.date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())
-    viewModel.startTime = 0
+    viewModel.startTime = System.currentTimeMillis()
     viewModel.isFinished = false
     viewModel.endTime = 0
     viewModel.isPersonal = true
@@ -495,7 +495,20 @@ fun Ulozeni() {
     val db = AppDatabase.getDatabase(context)
     val rideDao = db.rideDao()
 
-    viewModel.startTime = System.currentTimeMillis()
+    if (viewModel.startFuelKm > 0 && viewModel.startKm > 0) {
+        if (viewModel.startKm < viewModel.startFuelKm){
+            val pom = viewModel.startKm
+            viewModel.startKm = viewModel.startFuelKm
+            viewModel.startFuelKm = pom
+        }
+    }
+    if (viewModel.endFuelKm > 0 && viewModel.endKm > 0) {
+        if (viewModel.endKm < viewModel.endFuelKm){
+            val pom2 = viewModel.endKm
+            viewModel.endKm = viewModel.endFuelKm
+            viewModel.endFuelKm = pom2
+        }
+    }
 
     if (viewModel.endKm != 0 || viewModel.endFuelKm != 0) {
         viewModel.ulozeniNewRide = 1
@@ -509,12 +522,12 @@ fun Ulozeni() {
         viewModel.isFamily = false
         viewModel.isBoys = false
     }
-    if (viewModel.selectedOption == "Family"){
+    else if (viewModel.selectedOption == "Family"){
         viewModel.isFamily = true
         viewModel.isPersonal = false
         viewModel.isBoys = false
     }
-    if (viewModel.selectedOption == "Boys"){
+    else if (viewModel.selectedOption == "Boys"){
         viewModel.isBoys = true
         viewModel.isPersonal = false
         viewModel.isFamily = false
@@ -1263,8 +1276,8 @@ fun Info() {
                     TableRow("End Time", ride.endTime?.let { formatTime(it) } ?: "-")
                     TableRow("End km", ride.endKm ?: "-")
                     TableRow("End fuel km", ride.endFuelKm ?: "-")
-                    TableRow("Distance", "${ride.distance ?: "-"} km")
-                    TableRow("Fuel", "${ride.fuel ?: "-"} L")
+                    TableRow("Distance", "${ride.distance ?: "-"} Km")
+                    TableRow("Fuel", "${ride.fuel ?: "-"} Km")
                     TableRow("Price", "${ride.price ?: "-"} Kč")
                     TableRow("Type",
                         if (ride.isPersonal == true) "Personal" else if (ride.isFamily == true) "Family" else if (ride.isBoys == true) "Boys" else "-"
